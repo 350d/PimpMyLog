@@ -504,7 +504,7 @@ class LogParser
 						$date = new DateTime( "@" . $timestamp );
 					}
 
-					if ( ! is_null( $tz ) )
+					if ( ! is_null( $tz ) && $tz !== '' )
 					{
 						$date->setTimezone( new DateTimeZone( $tz ) );
 					}

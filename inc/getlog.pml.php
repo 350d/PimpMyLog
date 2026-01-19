@@ -155,7 +155,7 @@ $exclude   = ( isset( $files[ $file_id ][ 'format' ][ 'exclude' ]   ) ) ? $files
 |
 */
 $now = new DateTime();
-if ( ! is_null( $tz ) ) {
+if ( ! is_null( $tz ) && $tz !== '' ) {
     $now->setTimezone( new DateTimeZone( $tz ) );
 }
 $now = $now->format( 'Y/m/d H:i:s' );

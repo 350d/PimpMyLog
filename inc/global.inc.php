@@ -1582,85 +1582,10 @@ function get_user_time_zone()
 		$tz = USER_TIME_ZONE;
 	}
 	
-	// Auto-detect timezone on first run if not set or using default
-	if ( ( $tz === '' || $tz === 'Europe/Paris' || $tz === 'UTC' ) && ! isset( $_POST[ 'tz' ] ) && ! isset( $_GET[ 'tz' ] ) )
+	// If AUTO is selected or timezone is not set, return empty to let JavaScript handle it
+	if ( $tz === 'AUTO' || $tz === '' )
 	{
-		// Try to get timezone from server
-		$detected_tz = @date_default_timezone_get();
-		
-		// If PHP timezone is not set, try to detect from system
-		if ( empty( $detected_tz ) || $detected_tz === 'UTC' || $detected_tz === 'Europe/Paris' )
-		{
-			// Try to get timezone from system
-			if ( function_exists( 'exec' ) )
-			{
-				$output = array();
-				@exec( 'date +%Z 2>/dev/null' , $output );
-				if ( ! empty( $output[ 0 ] ) )
-				{
-					// Try to convert timezone abbreviation to timezone identifier
-					$tz_abbr = trim( $output[ 0 ] );
-					$tz_list = DateTimeZone::listIdentifiers();
-					foreach ( $tz_list as $tz_id )
-					{
-						try
-						{
-							$dtz = new DateTimeZone( $tz_id );
-							$dt  = new DateTime( 'now' , $dtz );
-							if ( $dt->format( 'T' ) === $tz_abbr )
-							{
-								$detected_tz = $tz_id;
-								break;
-							}
-						}
-						catch ( Exception $e )
-						{
-							continue;
-						}
-					}
-				}
-			}
-			
-			// If still not detected, try to get from date.timezone ini setting
-			if ( ( empty( $detected_tz ) || $detected_tz === 'UTC' || $detected_tz === 'Europe/Paris' ) && ini_get( 'date.timezone' ) )
-			{
-				$ini_tz = ini_get( 'date.timezone' );
-				if ( in_array( $ini_tz , DateTimeZone::listIdentifiers() ) )
-				{
-					$detected_tz = $ini_tz;
-				}
-			}
-		}
-		
-		// If we detected a valid timezone and it's different from default, save it to config
-		if ( ! empty( $detected_tz ) && in_array( $detected_tz , DateTimeZone::listIdentifiers() ) && $detected_tz !== 'Europe/Paris' && $detected_tz !== 'UTC' )
-		{
-			$tz = $detected_tz;
-			
-			// Save to config file on first run (only if config exists and USER_TIME_ZONE is default)
-			if ( defined( 'USER_TIME_ZONE' ) && ( USER_TIME_ZONE === 'Europe/Paris' || USER_TIME_ZONE === 'UTC' ) )
-			{
-				$config_file = get_config_file_path();
-				if ( $config_file && file_exists( $config_file ) && is_writable( $config_file ) )
-				{
-					$config_content = @file_get_contents( $config_file );
-					if ( $config_content !== false )
-					{
-						// Update USER_TIME_ZONE in config
-						$config_content = preg_replace( 
-							'/"USER_TIME_ZONE"\s*:\s*"[^"]*"/' , 
-							'"USER_TIME_ZONE" : "' . addslashes( $detected_tz ) . '"' , 
-							$config_content 
-						);
-						@file_put_contents( $config_file , $config_content );
-					}
-				}
-			}
-		}
-		else
-		{
-			$tz = $detected_tz;
-		}
+		return '';
 	}
 	
 	if ( ! in_array( $tz , DateTimeZone::listIdentifiers() ) )
@@ -1668,7 +1593,7 @@ function get_user_time_zone()
 		$tz = @date( 'e' );
 		if ( empty( $tz ) || ! in_array( $tz , DateTimeZone::listIdentifiers() ) )
 		{
-			$tz = 'UTC';
+			$tz = '';
 		}
 	}
 

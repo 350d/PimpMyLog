@@ -288,10 +288,13 @@ $csrf = csrf_get();
 												if ( $l == $locale ) echo ' selected="selected"';
 												echo '>' . $n . '</option>';
 											}
-										?><?php else : ?><option value=""><?php _e( 'Language cannot be changed' );?></option><?php endif; ?></select></li><li><select id="cog-tz" class="form-control input-sm" title="<?php _h( 'Timezone' );?>"><option value=""><?php _e( 'Change timezone...' );?></option><?php
+										?><?php else : ?><option value=""><?php _e( 'Language cannot be changed' );?></option><?php endif; ?></select></li><li><select id="cog-tz" class="form-control input-sm" title="<?php _h( 'Timezone' );?>"><?php
+										// Add AUTO option first
+										$tz_selected = ( $tz === '' || $tz === 'UTC' || $tz === 'Europe/Paris' || !isset($_GET['tz']) ) ? 'AUTO' : $tz;
+										echo '<option value="AUTO"' . ( $tz_selected === 'AUTO' ? ' selected="selected"' : '' ) . '>' . __( 'AUTO' ) . '</option>';
 										foreach ( DateTimeZone::listIdentifiers() as $n ) {
 											echo '<option value="' . $n . '"';
-											if ( $n == $tz ) echo ' selected="selected"';
+											if ( $n == $tz_selected && $tz_selected !== 'AUTO' ) echo ' selected="selected"';
 											echo '>' . $n . '</option>';
 										}
 									?></select></li></ul></li><?php if ( ! is_null( $current_user ) ) { ?><li class="dropdown"><a href="#" class="dropdown-toggle" data-toggle="dropdown" title="<?php echo h(  sprintf( __('You are currently connected as %s') , $current_user ) ); ?>"><span class="glyphicon glyphicon-user"></span> <span class="visible-xs-* visible-sm-* hidden-md hidden-lg"><?php _h('User settings');?></span></a><ul class="dropdown-menu"><?php if ( Sentinel::isAdmin() ) { ?><li><a href="#" title="<?php _h('Click here to manager users'); ?>" data-toggle="modal" data-target="#umModal"><span class="glyphicon glyphicon-flash"></span>&nbsp;&nbsp;<?php _e('Manage users'); ?></a></li><?php } ?><li><a href="#" title="<?php _h('Click here to view your profile'); ?>" data-toggle="modal" data-target="#prModal"><span class="glyphicon glyphicon-user"></span>&nbsp;&nbsp;<?php _e('Profile'); ?></a></li><li><a href="#" title="<?php _h('Click here to change your password'); ?>" data-toggle="modal" data-target="#cpModal"><span class="glyphicon glyphicon-lock"></span>&nbsp;&nbsp;<?php _e('Change password'); ?></a></li><li><a href="?signout&l=<?php echo $locale;?>" title="<?php _h('Click here to sign out'); ?>"><span class="glyphicon glyphicon-log-out"></span>&nbsp;&nbsp;<?php _e('Sign out'); ?></a></li></ul></li><?php } ?></ul></div></div></div><?php if ( PULL_TO_REFRESH === true ) { ?><div id="hook" class="hook"><div id="loader" class="hook-loader"><div class="hook-spinner"></div></div><span id="hook-text"></span></div><?php } ?><div class="container"><?php if ( isset( $_SESSION['upgradegitpullok'] ) ) :
@@ -324,42 +327,53 @@ $csrf = csrf_get();
 														$color = 'warning';
 													}
 												?><div class="form-group" data-fileid="<?php echo $fid ?>"><label for="<?php echo $fid ?>" class="col-sm-4 control-label text-<?php echo $color; ?>"><?php echo $display; ?></label><div class="col-sm-8"><div class="btn-group" data-toggle="buttons"><label class="btn btn-success btn-xs active logs-selector-yes"><input type="radio" name="f-<?php echo $fid ?>" id="add-logs-f-<?php echo $fid ?>-true" value="1" checked="checked"><?php _e('Yes'); ?></label><label class="btn btn-default btn-xs logs-selector-no"><input type="radio" name="f-<?php echo $fid ?>" id="add-logs-f-<?php echo $fid ?>-false" value="0"><?php _e('No'); ?></label></div><span class="glyphicon glyphicon-question-sign text-muted" data-toggle="tooltip" data-placement="right" data-html="true" title="<div class='hyphen'><?php echo h( $paths ); ?></div>"></span></div></div><?php } ?></div></div><div class="modal-footer"><button type="button" class="btn btn-default" onclick="users_view(this)" id="umUsersViewBtn"><?php _e('« Back');?></button> <button type="button" class="btn btn-default" onclick="users_list()" id="umUsersAddBtn"><?php _e('Cancel');?></button><input type="submit" class="btn btn-primary" data-loading-text="<?php _h('Saving...');?>" value="<?php _h('Save');?>" id="umUsersAddSave"></div><input type="hidden" name="add-type" id="add-type" value="add"></form></div></div><div class="tab-pane" id="umAnonymous"><form id="umAnonymousForm" autocomplete="off" role="form"><div class="modal-body form-horizontal"><div id="umAnonymousAlert"></div><div id="umAnonymousBody" class="logs-selector"></div></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal"><?php _e('Close');?></button><input type="submit" class="btn btn-primary" data-loading-text="<?php _h('Saving...');?>" value="<?php _h('Save');?>" id="umAnonymousSave"></div></form></div><div class="tab-pane" id="umAuthLog"><div class="modal-body" id="umAuthLogBody"></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal"><?php _e('Close');?></button></div></div></div></div></div></div><?php } ?><?php } ?><script>
-// Auto-detect timezone on first run
+// Auto-detect timezone when AUTO is selected
 (function() {
-	if (typeof(Storage) !== "undefined") {
-		var tzDetected = localStorage.getItem('pml_tz_detected');
-		var currentTz = '<?php echo addslashes($tz); ?>';
-		var urlTz = new URLSearchParams(window.location.search).get('tz');
-		
-		// Only auto-detect if timezone is not set or is default (UTC/Europe/Paris) and not in URL
-		if (!tzDetected && !urlTz && (currentTz === '' || currentTz === 'UTC' || currentTz === 'Europe/Paris')) {
-			try {
-				// Get browser timezone
-				var browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-				
-				if (browserTz && browserTz !== 'UTC' && browserTz !== 'Europe/Paris') {
-					// Check if timezone is in the list of valid timezones
-					var tzSelect = document.getElementById('cog-tz');
-					if (tzSelect) {
-						var tzOptions = Array.from(tzSelect.options).map(function(opt) { return opt.value; });
-						if (tzOptions.indexOf(browserTz) !== -1) {
-							// Set timezone via URL parameter
-							var url = new URL(window.location);
-							url.searchParams.set('tz', browserTz);
-							window.location.href = url.toString();
-							return;
-						}
+	var urlTz = new URLSearchParams(window.location.search).get('tz');
+	var tzSelect = document.getElementById('cog-tz');
+	
+	// If AUTO is selected or no timezone is set, use browser timezone
+	if (tzSelect && (urlTz === 'AUTO' || urlTz === null || urlTz === '')) {
+		try {
+			// Get browser timezone
+			var browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+			
+			if (browserTz) {
+				// Check if timezone is in the list of valid timezones
+				var tzOptions = Array.from(tzSelect.options).map(function(opt) { return opt.value; });
+				if (tzOptions.indexOf(browserTz) !== -1) {
+					// Store browser timezone for use in PHP (via hidden input or cookie)
+					// For now, we'll set it via URL parameter on first load
+					if (urlTz === null || urlTz === '') {
+						var url = new URL(window.location);
+						url.searchParams.set('tz', 'AUTO');
+						window.location.href = url.toString();
+						return;
 					}
+					// If AUTO is already set, use browser timezone for date formatting
+					// This will be handled by setting a cookie or using the browser timezone directly
+					document.documentElement.setAttribute('data-browser-tz', browserTz);
 				}
-			} catch(e) {
-				// Fallback: ignore errors
 			}
+		} catch(e) {
+			// Fallback: ignore errors
 		}
-		
-		// Mark as detected to prevent repeated checks
-		if (!tzDetected) {
-			localStorage.setItem('pml_tz_detected', '1');
-		}
+	}
+	
+	// Handle timezone selector change
+	if (tzSelect) {
+		tzSelect.addEventListener('change', function() {
+			var selectedTz = this.value;
+			var url = new URL(window.location);
+			if (selectedTz === 'AUTO') {
+				url.searchParams.set('tz', 'AUTO');
+			} else if (selectedTz !== '') {
+				url.searchParams.set('tz', selectedTz);
+			} else {
+				url.searchParams.delete('tz');
+			}
+			window.location.href = url.toString();
+		});
 	}
 })();
 </script><script src="js/pml.min.js"></script><script src="js/main.min.js"></script><script>numeral.language('<?php echo $localejs;?>');</script><?php if ( ( 'UA-XXXXX-X' != GOOGLE_ANALYTICS ) && ( '' != GOOGLE_ANALYTICS ) ) { ?><script>var _gaq=[['_setAccount','<?php echo GOOGLE_ANALYTICS;?>'],['_trackPageview']];
