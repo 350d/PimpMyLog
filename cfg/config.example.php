@@ -168,6 +168,93 @@
 					"SQL": "pre"
 				}
 			}
+		},
+		"serverpilot_php_error": {
+			"display"   : "PHP Error (ServerPilot)",
+			"path"      : "\/srv\/users\/serverpilot\/apps\/YOURAPP\/log\/YOURAPP_php8.5.error.log",
+			"refresh"   : 5,
+			"max"       : 100,
+			"notify"    : true,
+			"format"    : {
+				"regex"        : "|^\\[(.*)\\] PHP (.*): (.*) in (.*) on line (.*)$|",
+				"export_title" : "Log",
+				"match"        : {
+					"Date"     : 1,
+					"Severity" : 2,
+					"Message"  : 3,
+					"File"     : 4,
+					"Line"     : 5
+				},
+				"types": {
+					"Date"     : "date:H:i:s",
+					"Severity" : "badge:severity",
+					"Message"  : "pre",
+					"File"     : "txt",
+					"Line"     : "numeral"
+				}
+			}
+		},
+		"serverpilot_php_access": {
+			"display"   : "PHP Access (ServerPilot)",
+			"path"      : "\/srv\/users\/serverpilot\/apps\/YOURAPP\/log\/YOURAPP_php8.5.access.log",
+			"refresh"   : 0,
+			"max"       : 50,
+			"notify"    : false,
+			"format"    : {
+				"regex"        : "|^(.*) - \\[(.*)\\] \"(.*) (.*) (.*)\" ([0-9]*) (.*) - (.*) (.*) (.*) \"(.*)\" \"(.*)\"|",
+				"export_title" : "URL",
+				"match"        : {
+					"IP"       : 1,
+					"Date"     : 2,
+					"Method"   : 3,
+					"URL"      : 4,
+					"Protocol" : 5,
+					"Code"     : 6,
+					"Size"     : 7,
+					"Referer"  : 11,
+					"UA"       : 12
+				},
+				"types": {
+					"Date"    : "date:H:i:s",
+					"IP"      : "ip:geo",
+					"URL"     : "txt",
+					"Code"    : "badge:http",
+					"Size"    : "numeral:0b",
+					"Referer" : "link",
+					"UA"      : "ua:{os.name} {os.version} | {browser.name} {browser.version}\/100"
+				},
+				"exclude": {
+					"URL": ["\/favicon.ico\/", "\/\\.pml\\.php.*$\/"]
+				}
+			}
+		},
+		"serverpilot_apache_error": {
+			"display"   : "Apache Error (ServerPilot)",
+			"path"      : "\/srv\/users\/serverpilot\/apps\/YOURAPP\/log\/YOURAPP_apache.error.log",
+			"refresh"   : 5,
+			"max"       : 100,
+			"notify"    : true,
+			"format"    : {
+				"regex"        : "|^\\[(.*)\\] \\[(.*)\\] (\\[client (.*)\\] )*((?!\\[client ).*)(, referer: (.*))*$|U",
+				"export_title" : "Log",
+				"match"        : {
+					"Date"     : 1,
+					"Severity" : 2,
+					"IP"       : 4,
+					"Log"      : 5,
+					"Referer"  : 7
+				},
+				"types": {
+					"Date"     : "date:H:i:s",
+					"IP"       : "ip:http",
+					"Log"      : "pre",
+					"Severity" : "badge:severity",
+					"Referer"  : "link"
+				},
+				"exclude": {
+					"Log": ["\/PHP Stack trace:\/", "\/PHP *[0-9]*\\. \/"]
+				}
+			}
 		}
 	}
 }
