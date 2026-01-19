@@ -23,10 +23,11 @@ class LogParser
 	 *                                 the previous scanned file size and the current one)
 	 * @param   boolean $full          Whether the log file should be loaded from scratch
 	 * @param   [type]   $max_search_log_time  The maximum duration in s to parse lines
+	 * @param   string  $block_start   A regex pattern or string to identify the start of a log block (for block-based parsing)
 	 *
 	 * @return  [type]                        [description]
 	 */
-	public static function getNewLines( $regex , $match , $types , $tz , $wanted_lines , $exclude , $file_path , $start_offset , $start_from , $load_more , $old_lastline , $multiline , $search , $data_to_parse , $full , $max_search_log_time )
+	public static function getNewLines( $regex , $match , $types , $tz , $wanted_lines , $exclude , $file_path , $start_offset , $start_from , $load_more , $old_lastline , $multiline , $search , $data_to_parse , $full , $max_search_log_time , $block_start = '' )
 	{
 
 		$fl = fopen( $file_path , "r" );
@@ -46,6 +47,18 @@ class LogParser
 		$file_lastline   = '';
 		$search_lastline = true;
 		$buffer          = array();
+
+		/*
+		|--------------------------------------------------------------------------
+		| Block-based parsing mode
+		|--------------------------------------------------------------------------
+		| If block_start is specified, use block-based parsing instead of line-based
+		|
+		*/
+		if ( $block_start !== '' )
+		{
+			return self::getNewLinesBlockMode( $regex , $match , $types , $tz , $wanted_lines , $exclude , $file_path , $start_offset , $start_from , $load_more , $old_lastline , $search , $data_to_parse , $full , $max_search_log_time , $block_start );
+		}
 
 		/*
 		|--------------------------------------------------------------------------
@@ -524,5 +537,345 @@ class LogParser
 		}
 
 		return $result;
+	}
+
+
+	/**
+	 * Block-based parsing mode for multi-line log entries
+	 *
+	 * @param   string  $regex         A regex to match each block
+	 * @param   array   $match         An array of matchers
+	 * @param   array   $types         An array of matchers types
+	 * @param   string  $tz            The wanted timezone to translate matchers with a date type
+	 * @param   integer $wanted_lines  the count of wanted lines to be returned
+	 * @param   array   $exclude       An array of exclusion matchers tokens
+	 * @param   string  $file_path     the file path
+	 * @param   integer $start_offset  the offset where to begin to parse file
+	 * @param   integer $start_from    the position from where the offset is taken
+	 * @param   boolean $load_more     loadmore mode : if true, we do not try to guess the previous line
+	 * @param   string  $old_lastline  The fingerprint of the last known line (previous call)
+	 * @param   string  $search        A search expression
+	 * @param   integer $data_to_parse The maximum count of bytes to read
+	 * @param   boolean $full          Whether the log file should be loaded from scratch
+	 * @param   integer $max_search_log_time  The maximum duration in s to parse lines
+	 * @param   string  $block_start   A regex pattern or string to identify the start of a log block
+	 *
+	 * @return  array                        Array of parsed logs with metadata
+	 */
+	private static function getNewLinesBlockMode( $regex , $match , $types , $tz , $wanted_lines , $exclude , $file_path , $start_offset , $start_from , $load_more , $old_lastline , $search , $data_to_parse , $full , $max_search_log_time , $block_start )
+	{
+		$fl = fopen( $file_path , "r" );
+		if ( $fl === false )
+		{
+			return '1';
+		}
+
+		$logs            = array();
+		$start           = microtime( true );
+		$regsearch       = false;
+		$found           = false;
+		$bytes           = 0;
+		$skip            = 0;
+		$error           = 0;
+		$abort           = false;
+		$file_lastline   = '';
+		$search_lastline = true;
+
+		// Prepare block_start pattern - if it's not a regex, make it one
+		$block_pattern = $block_start;
+		if ( ! preg_match( '/^\/.*\/[imsxADSUXu]*$/' , $block_start ) )
+		{
+			// It's a plain string, escape it and make it a regex
+			$block_pattern = '/^' . preg_quote( $block_start , '/' ) . '/';
+		}
+
+		// Get file metadata
+		if ( version_compare( PHP_VERSION , '5.3.0' ) >= 0 )
+		{
+			$filem = new DateTime();
+			$filem->setTimestamp( filemtime( $file_path ) );
+		}
+		else
+		{
+			$filem = new DateTime( "@" . filemtime( $file_path ) );
+		}
+		if ( ! is_null( $tz ) )
+		{
+			$filem->setTimezone( new DateTimeZone( $tz ) );
+		}
+		$filemu   = $filem->format( 'U' );
+		$filem    = $filem->format( 'Y/m/d H:i:s' );
+		$filesize = filesize( $file_path );
+
+		// Try to guess if the search expression is a regexp or not
+		if ( $search !== '' )
+		{
+			$test      = @preg_match( $search , 'this is just a test !' );
+			$regsearch = ( $test === false ) ? false : true;
+		}
+
+		// Determine starting position
+		// For block mode, we need to read from a position that allows us to capture complete blocks
+		if ( $load_more && $start_from === SEEK_SET )
+		{
+			fseek( $fl , $start_offset );
+		}
+		else
+		{
+			// For block mode, we read from the beginning or from a position that ensures we get complete blocks
+			if ( $full )
+			{
+				fseek( $fl , 0 , SEEK_SET );
+			}
+			else
+			{
+				// Read only new data from the end, but go back a bit to ensure we capture block start
+				// Go back up to 64KB to find the previous block start
+				$read_from = max( 0 , $filesize - max( $data_to_parse , 65536 ) );
+				fseek( $fl , $read_from , SEEK_SET );
+				
+				// Read first line to check if we're in the middle of a block
+				$first_line = fgets( $fl );
+				if ( $first_line !== false && ! preg_match( $block_pattern , rtrim( $first_line , "\r\n" ) ) )
+				{
+					// We're in the middle of a block, skip until we find the next block start
+					while ( ( $line = fgets( $fl ) ) !== false )
+					{
+						$bytes += strlen( $line );
+						if ( preg_match( $block_pattern , rtrim( $line , "\r\n" ) ) )
+						{
+							// Found block start, rewind to start of this line
+							fseek( $fl , -strlen( $line ) , SEEK_CUR );
+							break;
+						}
+					}
+				}
+				else
+				{
+					// We're at a block start, rewind to beginning of this line
+					if ( $first_line !== false )
+					{
+						fseek( $fl , -strlen( $first_line ) , SEEK_CUR );
+					}
+				}
+			}
+		}
+
+		$current_block = '';
+		$in_block      = false;
+		$ln            = 0;
+		$block_start_pos = 0;
+
+		// Read file line by line
+		while ( ( $line = fgets( $fl ) ) !== false )
+		{
+			$bytes += strlen( $line );
+			$line = rtrim( $line , "\r\n" );
+
+			// Check if this line starts a new block
+			if ( preg_match( $block_pattern , $line ) )
+			{
+				// Process previous block if exists
+				if ( $in_block && $current_block !== '' )
+				{
+					$log = self::parseLine( $regex , $match , $current_block , $types , $tz );
+
+					if ( is_array( $log ) )
+					{
+						$return_log = true;
+
+						// Check exclusions
+						foreach ( $log as $key => $value )
+						{
+							if ( ( isset( $exclude[ $key ] ) ) && ( is_array( $exclude[ $key ] ) ) )
+							{
+								foreach ( $exclude[ $key ] as $ekey => $reg )
+								{
+									try
+									{
+										if ( preg_match( $reg , $value ) )
+										{
+											$return_log = false;
+											break 2;
+										}
+									}
+									catch ( Exception $e )
+									{
+									}
+								}
+							}
+						}
+
+						// Filter by search
+						if ( $return_log && ! empty( $search ) )
+						{
+							if ( $regsearch )
+							{
+								$return_log = preg_match( $search , $current_block );
+								if ( $return_log === 0 )
+								{
+									$return_log = false;
+								}
+							}
+							else
+							{
+								$return_log = strpos( $current_block , $search ) !== false;
+							}
+						}
+
+						if ( $return_log )
+						{
+							$found            = true;
+							$log[ 'pml' ]     = $current_block;
+							$log[ 'pmlo' ]    = $block_start_pos;
+							$logs[ 'logs' ][] = $log;
+							$ln++;
+
+							// Get the last line for fingerprint
+							if ( $search_lastline === true )
+							{
+								$lines = explode( "\n" , $current_block );
+								$file_lastline = sha1( end( $lines ) );
+								$search_lastline = false;
+							}
+						}
+						else
+						{
+							$skip++;
+						}
+					}
+					else
+					{
+						$error++;
+					}
+
+					// Break if we have found the wanted count of logs
+					if ( $ln >= $wanted_lines )
+					{
+						break;
+					}
+				}
+
+				// Start new block
+				$current_block = $line;
+				$in_block = true;
+				$block_start_pos = ftell( $fl ) - strlen( $line ) - 1;
+			}
+			elseif ( $in_block )
+			{
+				// Continue current block
+				$current_block .= "\n" . $line;
+			}
+
+			// Break if time computing is too high
+			if ( microtime( true ) - $start > $max_search_log_time )
+			{
+				$abort = true;
+				break;
+			}
+		}
+
+		// Process last block if exists
+		if ( $in_block && $current_block !== '' && $ln < $wanted_lines )
+		{
+			$log = self::parseLine( $regex , $match , $current_block , $types , $tz );
+
+			if ( is_array( $log ) )
+			{
+				$return_log = true;
+
+				// Check exclusions
+				foreach ( $log as $key => $value )
+				{
+					if ( ( isset( $exclude[ $key ] ) ) && ( is_array( $exclude[ $key ] ) ) )
+					{
+						foreach ( $exclude[ $key ] as $ekey => $reg )
+						{
+							try
+							{
+								if ( preg_match( $reg , $value ) )
+								{
+									$return_log = false;
+									break 2;
+								}
+							}
+							catch ( Exception $e )
+							{
+							}
+						}
+					}
+				}
+
+				// Filter by search
+				if ( $return_log && ! empty( $search ) )
+				{
+					if ( $regsearch )
+					{
+						$return_log = preg_match( $search , $current_block );
+						if ( $return_log === 0 )
+						{
+							$return_log = false;
+						}
+					}
+					else
+					{
+						$return_log = strpos( $current_block , $search ) !== false;
+					}
+				}
+
+				if ( $return_log )
+				{
+					$found            = true;
+					$log[ 'pml' ]     = $current_block;
+					$log[ 'pmlo' ]    = $block_start_pos;
+					$logs[ 'logs' ][] = $log;
+					$ln++;
+
+					// Get the last line for fingerprint
+					if ( $search_lastline === true )
+					{
+						$lines = explode( "\n" , $current_block );
+						$file_lastline = sha1( end( $lines ) );
+						$search_lastline = false;
+					}
+				}
+				else
+				{
+					$skip++;
+				}
+			}
+			else
+			{
+				$error++;
+			}
+		}
+
+		$last_parsed_offset = ftell( $fl );
+		fclose( $fl );
+
+		// Reverse logs array to show newest first (since we read from beginning)
+		if ( ! $load_more && ! $full )
+		{
+			$logs[ 'logs' ] = array_reverse( $logs[ 'logs' ] );
+		}
+
+		$logs[ 'found' ]       = $found;
+		$logs[ 'abort' ]       = $abort;
+		$logs[ 'regsearch' ]   = $regsearch;
+		$logs[ 'search' ]      = $search;
+		$logs[ 'full' ]        = $full;
+		$logs[ 'lpo' ]         = $last_parsed_offset;
+		$logs[ 'count' ]        = $ln;
+		$logs[ 'bytes' ]        = $bytes;
+		$logs[ 'skiplines' ]   = $skip;
+		$logs[ 'errorlines' ]  = $error;
+		$logs[ 'fingerprint' ] = md5( serialize( @$logs[ 'logs' ] ) );
+		$logs[ 'lastline' ]    = $file_lastline;
+		$logs[ 'duration' ]    = (int)( ( microtime( true ) - $start ) * 1000 );
+		$logs[ 'filesize' ]    = $filesize;
+		$logs[ 'filemodif' ]   = $filem;
+		$logs[ 'filemodifu' ]  = $filemu;
+
+		return $logs;
 	}
 }

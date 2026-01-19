@@ -145,6 +145,7 @@ $regex     = $files[ $file_id ][ 'format' ][ 'regex' ];
 $match     = $files[ $file_id ][ 'format' ][ 'match' ];
 $types     = $files[ $file_id ][ 'format' ][ 'types' ];
 $multiline = ( isset( $files[ $file_id ][ 'format' ][ 'multiline' ] ) ) ? $files[ $file_id ][ 'format' ][ 'multiline' ] : '';
+$block_start = ( isset( $files[ $file_id ][ 'format' ][ 'block_start' ] ) ) ? $files[ $file_id ][ 'format' ][ 'block_start' ] : '';
 $exclude   = ( isset( $files[ $file_id ][ 'format' ][ 'exclude' ]   ) ) ? $files[ $file_id ][ 'format' ][ 'exclude' ] : array();
 
 /*
@@ -209,7 +210,7 @@ else {
 |--------------------------------------------------------------------------
 |
 */
-$logs = LogParser::getNewLines( $regex , $match , $types , $tz , $max , $exclude , $file_path , $start_offset , $start_from , $load_more , $old_lastline , $multiline ,  $search , $data_to_parse , $full , MAX_SEARCH_LOG_TIME );
+$logs = LogParser::getNewLines( $regex , $match , $types , $tz , $max , $exclude , $file_path , $start_offset , $start_from , $load_more , $old_lastline , $multiline ,  $search , $data_to_parse , $full , MAX_SEARCH_LOG_TIME , $block_start );
 
 /*
 |--------------------------------------------------------------------------

@@ -105,6 +105,7 @@ $regex         = $files[ $file_id ][ 'format' ][ 'regex' ];
 $match         = $files[ $file_id ][ 'format' ][ 'match' ];
 $types         = $files[ $file_id ][ 'format' ][ 'types' ];
 $multiline     = ( isset( $files[ $file_id ][ 'format' ][ 'multiline' ] ) ) ? $files[ $file_id ][ 'format' ][ 'multiline' ] : '';
+$block_start   = ( isset( $files[ $file_id ][ 'format' ][ 'block_start' ] ) ) ? $files[ $file_id ][ 'format' ][ 'block_start' ] : '';
 $exclude       = ( isset( $files[ $file_id ][ 'format' ][ 'exclude' ] ) ) ? $files[ $file_id ][ 'format' ][ 'exclude' ] : array();
 $title         = ( isset( $files[ $file_id ][ 'format' ][ 'export_title' ] ) ) ? $files[ $file_id ][ 'format' ][ 'export_title' ] : '';
 $file_path     = $files[ $file_id ][ 'path' ];
@@ -114,7 +115,7 @@ $load_more     = false;
 $old_lastline  = '';
 $data_to_parse = filesize( $file_path );
 $full          = true;
-$logs          = LogParser::getNewLines( $regex , $match , $types , $tz , $count , $exclude , $file_path , $start_offset , $start_from , $load_more , $old_lastline , $multiline , $search , $data_to_parse , $full , $timeout );
+$logs          = LogParser::getNewLines( $regex , $match , $types , $tz , $count , $exclude , $file_path , $start_offset , $start_from , $load_more , $old_lastline , $multiline , $search , $data_to_parse , $full , $timeout , $block_start );
 
 /*
 |--------------------------------------------------------------------------
