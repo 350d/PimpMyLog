@@ -180,7 +180,7 @@ define( 'DEFAULT_AUTO_UPGRADE' , false );
 define( 'DEFAULT_CHECK_UPGRADE' , true );
 define( 'DEFAULT_EXPORT' , true );
 define( 'DEFAULT_FILE_SELECTOR' , 'bs' );
-define( 'DEFAULT_FOOTER' , '&copy; <a href="http://www.potsky.com" target="doc">Potsky</a> 2007-' . YEAR . ' - <a href="http://pimpmylog.com" target="doc">Pimp my Log</a>' );
+define( 'DEFAULT_FOOTER' , '<a href="https://github.com/350d/PimpMyLog" target="_blank">GitHub</a> - v' . get_current_pml_version() );
 define( 'DEFAULT_FORGOTTEN_YOUR_PASSWORD_URL' , 'http://support.pimpmylog.com/kb/misc/forgotten-your-password' );
 define( 'DEFAULT_GEOIP_URL' , 'http://www.geoiptool.com/en/?IP=%p' );
 define( 'DEFAULT_PORT_URL' , 'http://www.adminsub.net/tcp-udp-port-finder/%p' );
