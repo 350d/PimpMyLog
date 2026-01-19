@@ -1293,9 +1293,9 @@ function get_current_pml_version()
 		
 		// Format as x.x.xx (e.g., 1738 -> 1.7.38)
 		$v = sprintf( '%d.%d.%02d' , 
-			(int)($base_version / 1000) ,           // first digit
-			(int)(($base_version / 100) % 10) ,     // second digit
-			$base_version % 100                      // last two digits
+			(int)floor( $base_version / 1000 ) ,           // first digit
+			(int)floor( ( $base_version / 100 ) % 10 ) ,    // second digit
+			(int)( $base_version % 100 )                    // last two digits
 		);
 	}
 
