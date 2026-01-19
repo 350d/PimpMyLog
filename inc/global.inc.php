@@ -1262,17 +1262,47 @@ function get_current_pml_version()
 {
 	$cache_file = dirname( __FILE__ ) . '/../tmp/version_cache.txt';
 	$cache_ttl  = 86400; // 24 hours
+	$base_dir   = dirname( dirname( __FILE__ ) );
+	$git_dir    = $base_dir . DIRECTORY_SEPARATOR . '.git';
+	
+	// Get current git commit hash to detect repository changes
+	$current_git_hash = '';
+	if ( is_dir( $git_dir ) && function_exists( 'exec' ) )
+	{
+		$output     = array();
+		$return_var = 0;
+		@exec( 'cd ' . escapeshellarg( $base_dir ) . ' && git rev-parse HEAD 2>/dev/null' , $output , $return_var );
+		if ( $return_var === 0 && ! empty( $output[ 0 ] ) )
+		{
+			$current_git_hash = trim( $output[ 0 ] );
+		}
+	}
 	
 	// Check cache
+	$cache_valid = false;
 	if ( file_exists( $cache_file ) )
 	{
 		$cache_time = filemtime( $cache_file );
-		if ( ( time() - $cache_time ) < $cache_ttl )
+		$cache_age  = time() - $cache_time;
+		
+		// Read cache content (first line is version, second line is git hash if exists)
+		$cache_content = @file_get_contents( $cache_file );
+		if ( $cache_content !== false )
 		{
-			$cached_version = @file_get_contents( $cache_file );
-			if ( $cached_version !== false && $cached_version !== '' )
+			$cache_lines = explode( "\n" , trim( $cache_content ) );
+			$cached_version = isset( $cache_lines[ 0 ] ) ? trim( $cache_lines[ 0 ] ) : '';
+			$cached_git_hash = isset( $cache_lines[ 1 ] ) ? trim( $cache_lines[ 1 ] ) : '';
+			
+			// Cache is valid if:
+			// 1. Age is less than TTL AND
+			// 2. Git hash matches (or git hash is empty/not available)
+			if ( $cache_age < $cache_ttl && $cached_version !== '' )
 			{
-				return trim( $cached_version );
+				if ( $current_git_hash === '' || $cached_git_hash === $current_git_hash )
+				{
+					$cache_valid = true;
+					return $cached_version;
+				}
 			}
 		}
 	}
@@ -1290,8 +1320,6 @@ function get_current_pml_version()
 	if ( $v !== '' && is_numeric( $v ) )
 	{
 		$base_version = (int)$v;
-		$base_dir     = dirname( dirname( __FILE__ ) );
-		$git_dir      = $base_dir . DIRECTORY_SEPARATOR . '.git';
 		
 		// Check if .git directory exists and git command is available
 		if ( is_dir( $git_dir ) && function_exists( 'exec' ) )
@@ -1316,7 +1344,7 @@ function get_current_pml_version()
 		$v = sprintf( '%d.%d.%02d' , $first_digit , $second_digit , $last_two );
 	}
 
-	// Save to cache
+	// Save to cache with git hash
 	if ( $v !== '' )
 	{
 		$tmp_dir = dirname( $cache_file );
@@ -1324,7 +1352,13 @@ function get_current_pml_version()
 		{
 			@mkdir( $tmp_dir , 0755 , true );
 		}
-		@file_put_contents( $cache_file , $v );
+		// Save version and git hash (if available)
+		$cache_data = $v;
+		if ( $current_git_hash !== '' )
+		{
+			$cache_data .= "\n" . $current_git_hash;
+		}
+		@file_put_contents( $cache_file , $cache_data );
 	}
 
 	return $v;
