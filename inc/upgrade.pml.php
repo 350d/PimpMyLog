@@ -85,12 +85,12 @@ $upgrade = array(
 if ( file_exists( '../version.js' ) ) {
 	$JSl_version        = json_decode( clean_json_version( @file_get_contents( '../version.js' ) ) , true );
 	$upgrade['current'] = $JSl_version[ 'version' ];
-	$default            = sprintf ( __( 'Current version %s' ) , $upgrade['current'] );
+	$default            = $upgrade['current']; // Just version number, no "Current version" prefix
 	$upgrade['footer']  = $default;
 }
 
 else {
-	$upgrade['footer'] = '<span class="text-danger">' . __( 'Unable to check your current version!') . '</span>';;
+	$upgrade['footer'] = ''; // Empty if version.js doesn't exist
 	echo json_encode( $upgrade );
 	die();
 }
@@ -209,13 +209,15 @@ try {
 		$html    = '<ul>';
 
 		if ( ! isset( $JSr_version[ 'changelog' ] ) ) {
-			$upgrade['footer'] = $default . ' - <a href="'. PIMPMYLOG_VERSION_URL . '" target="check"><span class="text-danger" title="' . sprintf( __( 'Error while fetching URL %s from the server hosting this Pimp my Log instance.' ) , PIMPMYLOG_VERSION_URL ) . '">' . __( 'Remote version broken!') . '</span></a>';
+			// Just return current version without remote check error message
+			$upgrade['footer'] = $default;
 			echo json_encode( $upgrade );
 			die();
 		}
 
 		if ( ! is_array( $JSr_version[ 'changelog' ] ) ) {
-			$upgrade['footer'] = $default . ' - <a href="'. PIMPMYLOG_VERSION_URL . '" target="check"><span class="text-danger" title="' . sprintf( __( 'Error while fetching URL %s from the server hosting this Pimp my Log instance.' ) , PIMPMYLOG_VERSION_URL ) . '">' . __( 'Remote version broken!') . '</span></a>';
+			// Just return current version without remote check error message
+			$upgrade['footer'] = $default;
 			echo json_encode( $upgrade );
 			die();
 		}
@@ -432,7 +434,8 @@ try {
 }
 
 catch ( Exception $e ) {
-	$upgrade['footer'] = $default . ' - <a href="'. PIMPMYLOG_VERSION_URL . '" target="check"><span class="text-danger" title="' . sprintf( __( 'Unable to fetch URL %s from the server hosting this Pimp my Log instance.' ) , PIMPMYLOG_VERSION_URL ) . '">' . __( 'Unable to check remote version!') . '</span></a>';
+	// Just return current version without remote check error message
+	$upgrade['footer'] = $default;
 	echo json_encode( $upgrade );
 	die();
 }
