@@ -541,13 +541,6 @@ function config_load( $load_user_configuration_dir = true )
 
 		if ( count( $gpaths ) == 0 )
 		{
-			// Skip files that don't exist (examples from config.example.php)
-			// Only skip if it's not a glob pattern (glob patterns may match 0 files legitimately)
-			if ( strpos( $path , '*' ) === false && strpos( $path , '?' ) === false && strpos( $path , '[' ) === false )
-			{
-				// Not a glob pattern and file doesn't exist - skip this example entry
-				continue;
-			}
 		}
 		else if ( count( $gpaths ) == 1 )
 		{
