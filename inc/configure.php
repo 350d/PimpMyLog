@@ -565,4 +565,4 @@ $lemma = array(
 				echo '<br/>';
 				echo '<br/>';
 				echo '<a class="btn btn-primary" href="../?' . $_SERVER['QUERY_STRING'] . '">' . __('Pimp my Logs now!') . '</a>';
-			?></p></div></div><div class="container"><hr><footer class="text-muted"><small><a href="https://github.com/350d/PimpMyLog" target="_blank">GitHub</a> - v<?php echo get_current_pml_version(); ?></small></footer></div><script src="../js/pml.min.js"></script><script src="../js/configure.min.js"></script></body></html>
+			?></p></div></div><div class="container"><hr><footer class="text-muted"><small><a href="https://github.com/350d/PimpMyLog" target="_blank">GitHub</a><?php $v = get_current_pml_version(); if ( $v !== '' ) echo ' - v' . $v; ?></small></footer></div><script src="../js/pml.min.js"></script><script src="../js/configure.min.js"></script></body></html>
