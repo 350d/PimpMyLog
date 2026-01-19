@@ -1260,6 +1260,24 @@ function array_filter_recursive( $input )
  */
 function get_current_pml_version()
 {
+	$cache_file = dirname( __FILE__ ) . '/../tmp/version_cache.txt';
+	$cache_ttl  = 86400; // 24 hours
+	
+	// Check cache
+	if ( file_exists( $cache_file ) )
+	{
+		$cache_time = filemtime( $cache_file );
+		if ( ( time() - $cache_time ) < $cache_ttl )
+		{
+			$cached_version = @file_get_contents( $cache_file );
+			if ( $cached_version !== false && $cached_version !== '' )
+			{
+				return trim( $cached_version );
+			}
+		}
+	}
+	
+	// Calculate version
 	$v    = '';
 	$file = dirname( __FILE__ ) . '/../version.js';
 	if ( file_exists( $file ) )
@@ -1296,6 +1314,17 @@ function get_current_pml_version()
 		$second_digit = intval( ( $base_version % 1000 ) / 100 );
 		$last_two     = intval( $base_version % 100 );
 		$v = sprintf( '%d.%d.%02d' , $first_digit , $second_digit , $last_two );
+	}
+
+	// Save to cache
+	if ( $v !== '' )
+	{
+		$tmp_dir = dirname( $cache_file );
+		if ( ! is_dir( $tmp_dir ) )
+		{
+			@mkdir( $tmp_dir , 0755 , true );
+		}
+		@file_put_contents( $cache_file , $v );
 	}
 
 	return $v;
