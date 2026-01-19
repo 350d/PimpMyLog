@@ -22,17 +22,11 @@
 
 ## Installation
 
-### Method 1: Clone Repository
+### Installation
 
 ```bash
 git clone https://github.com/350d/PimpMyLog.git
 cd PimpMyLog
-```
-
-### Method 2: Composer
-
-```bash
-composer create-project potsky/pimp-my-log
 ```
 
 ## Configuration
