@@ -467,7 +467,12 @@ function get_config_file( $path = false )
 		$string = @file_get_contents( $path );
 	}
 
-	return json_decode( $string , true );
+	$parsed = json_decode( $string , true );
+	if ( $parsed === null && json_last_error() !== JSON_ERROR_NONE )
+	{
+		error_log( "Unable to parse JSON config from $path! JSON error: " . json_last_error_msg() );
+	}
+	return $parsed;
 }
 
 /**
