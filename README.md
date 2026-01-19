@@ -29,6 +29,23 @@ git clone https://github.com/350d/PimpMyLog.git
 cd PimpMyLog
 ```
 
+## Updating
+
+To update to the latest version, pull the latest changes from the repository:
+
+```bash
+cd PimpMyLog
+git pull origin master
+```
+
+If you have local modifications, you may need to stash them first:
+
+```bash
+git stash
+git pull origin master
+git stash pop
+```
+
 ## Configuration
 
 1. **Copy the configuration file:**
