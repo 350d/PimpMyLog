@@ -1,6 +1,6 @@
 /*PSK*/pml_version_cb(/*PSK*/
 {
-	"version"     : "1.7.15",
+	"version"     : "2.0.0",
 	"versiondevh" : "",
 	"messages"    : {},
 	"changelog"   : {

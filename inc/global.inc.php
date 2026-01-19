@@ -1268,6 +1268,31 @@ function get_current_pml_version()
 		$v = @$j[ 'version' ];
 	}
 
+	// Add commit count to version (e.g., 2.0.0+160)
+	if ( $v !== '' )
+	{
+		$base_dir = dirname( dirname( __FILE__ ) );
+		$git_dir  = $base_dir . DIRECTORY_SEPARATOR . '.git';
+		
+		// Check if .git directory exists and git command is available
+		if ( is_dir( $git_dir ) && function_exists( 'exec' ) )
+		{
+			$commit_count = '';
+			$output      = array();
+			$return_var  = 0;
+			
+			// Try to get commit count using git
+			@exec( 'cd ' . escapeshellarg( $base_dir ) . ' && git rev-list --count HEAD 2>/dev/null' , $output , $return_var );
+			
+			if ( $return_var === 0 && ! empty( $output[ 0 ] ) && is_numeric( $output[ 0 ] ) )
+			{
+				$commit_count = '+' . (int)$output[ 0 ];
+			}
+			
+			$v .= $commit_count;
+		}
+	}
+
 	return $v;
 }
 
