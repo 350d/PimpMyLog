@@ -1582,8 +1582,22 @@ function get_user_time_zone()
 		$tz = USER_TIME_ZONE;
 	}
 	
-	// If AUTO is selected or timezone is not set, return empty to let JavaScript handle it
-	if ( $tz === 'AUTO' || $tz === '' )
+	// If AUTO is selected, try to get browser timezone from cookie
+	if ( $tz === 'AUTO' )
+	{
+		if ( isset( $_COOKIE[ 'pml_browser_tz' ] ) && ! empty( $_COOKIE[ 'pml_browser_tz' ] ) )
+		{
+			$tz = $_COOKIE[ 'pml_browser_tz' ];
+		}
+		else
+		{
+			// If cookie not set yet, return empty - JavaScript will set it
+			return '';
+		}
+	}
+	
+	// If timezone is not set, default to AUTO (which means empty for now)
+	if ( $tz === '' )
 	{
 		return '';
 	}

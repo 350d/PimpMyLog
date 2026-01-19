@@ -332,8 +332,8 @@ $csrf = csrf_get();
 	var urlTz = new URLSearchParams(window.location.search).get('tz');
 	var tzSelect = document.getElementById('cog-tz');
 	
-	// If AUTO is selected or no timezone is set, use browser timezone
-	if (tzSelect && (urlTz === 'AUTO' || urlTz === null || urlTz === '')) {
+	// If AUTO is selected, determine browser timezone and use it
+	if (tzSelect && urlTz === 'AUTO') {
 		try {
 			// Get browser timezone
 			var browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -342,22 +342,22 @@ $csrf = csrf_get();
 				// Check if timezone is in the list of valid timezones
 				var tzOptions = Array.from(tzSelect.options).map(function(opt) { return opt.value; });
 				if (tzOptions.indexOf(browserTz) !== -1) {
-					// Store browser timezone for use in PHP (via hidden input or cookie)
-					// For now, we'll set it via URL parameter on first load
-					if (urlTz === null || urlTz === '') {
-						var url = new URL(window.location);
-						url.searchParams.set('tz', 'AUTO');
-						window.location.href = url.toString();
-						return;
-					}
-					// If AUTO is already set, use browser timezone for date formatting
-					// This will be handled by setting a cookie or using the browser timezone directly
+					// Set browser timezone via cookie for PHP to use
+					document.cookie = 'pml_browser_tz=' + browserTz + '; path=/; max-age=31536000'; // 1 year
+					// Also set it as data attribute for JavaScript use
 					document.documentElement.setAttribute('data-browser-tz', browserTz);
 				}
 			}
 		} catch(e) {
 			// Fallback: ignore errors
 		}
+	}
+	// If no timezone is set, default to AUTO
+	else if (tzSelect && (urlTz === null || urlTz === '')) {
+		var url = new URL(window.location);
+		url.searchParams.set('tz', 'AUTO');
+		window.location.href = url.toString();
+		return;
 	}
 	
 	// Handle timezone selector change
@@ -369,6 +369,8 @@ $csrf = csrf_get();
 				url.searchParams.set('tz', 'AUTO');
 			} else if (selectedTz !== '') {
 				url.searchParams.set('tz', selectedTz);
+				// Clear browser timezone cookie when manual timezone is selected
+				document.cookie = 'pml_browser_tz=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
 			} else {
 				url.searchParams.delete('tz');
 			}
