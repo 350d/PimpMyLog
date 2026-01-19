@@ -1030,7 +1030,7 @@ function json_indent( $json )
  */
 function clean_json_version( $data )
 {
-	return str_replace( array( '/*PSK*/pml_version_cb(/*PSK*/' , '/*PSK*/);/*PSK*/' , '/*PSK*/)/*PSK*/' ) , array( '' , '' , '' ) , $data );
+	return str_replace( array( '/*PSK*/pml_version_cb(/*PSK*/' , '/*PSK*/);/*PSK*/' , '/*PSK*/)/*PSK*/' , ');' ) , array( '' , '' , '' , '' ) , $data );
 }
 
 /**
