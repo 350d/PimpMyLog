@@ -323,7 +323,46 @@ $csrf = csrf_get();
 														}
 														$color = 'warning';
 													}
-												?><div class="form-group" data-fileid="<?php echo $fid ?>"><label for="<?php echo $fid ?>" class="col-sm-4 control-label text-<?php echo $color; ?>"><?php echo $display; ?></label><div class="col-sm-8"><div class="btn-group" data-toggle="buttons"><label class="btn btn-success btn-xs active logs-selector-yes"><input type="radio" name="f-<?php echo $fid ?>" id="add-logs-f-<?php echo $fid ?>-true" value="1" checked="checked"><?php _e('Yes'); ?></label><label class="btn btn-default btn-xs logs-selector-no"><input type="radio" name="f-<?php echo $fid ?>" id="add-logs-f-<?php echo $fid ?>-false" value="0"><?php _e('No'); ?></label></div><span class="glyphicon glyphicon-question-sign text-muted" data-toggle="tooltip" data-placement="right" data-html="true" title="<div class='hyphen'><?php echo h( $paths ); ?></div>"></span></div></div><?php } ?></div></div><div class="modal-footer"><button type="button" class="btn btn-default" onclick="users_view(this)" id="umUsersViewBtn"><?php _e('« Back');?></button> <button type="button" class="btn btn-default" onclick="users_list()" id="umUsersAddBtn"><?php _e('Cancel');?></button><input type="submit" class="btn btn-primary" data-loading-text="<?php _h('Saving...');?>" value="<?php _h('Save');?>" id="umUsersAddSave"></div><input type="hidden" name="add-type" id="add-type" value="add"></form></div></div><div class="tab-pane" id="umAnonymous"><form id="umAnonymousForm" autocomplete="off" role="form"><div class="modal-body form-horizontal"><div id="umAnonymousAlert"></div><div id="umAnonymousBody" class="logs-selector"></div></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal"><?php _e('Close');?></button><input type="submit" class="btn btn-primary" data-loading-text="<?php _h('Saving...');?>" value="<?php _h('Save');?>" id="umAnonymousSave"></div></form></div><div class="tab-pane" id="umAuthLog"><div class="modal-body" id="umAuthLogBody"></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal"><?php _e('Close');?></button></div></div></div></div></div></div><?php } ?><?php } ?><script src="js/pml.min.js"></script><script src="js/main.min.js"></script><script>numeral.language('<?php echo $localejs;?>');</script><?php if ( ( 'UA-XXXXX-X' != GOOGLE_ANALYTICS ) && ( '' != GOOGLE_ANALYTICS ) ) { ?><script>var _gaq=[['_setAccount','<?php echo GOOGLE_ANALYTICS;?>'],['_trackPageview']];
+												?><div class="form-group" data-fileid="<?php echo $fid ?>"><label for="<?php echo $fid ?>" class="col-sm-4 control-label text-<?php echo $color; ?>"><?php echo $display; ?></label><div class="col-sm-8"><div class="btn-group" data-toggle="buttons"><label class="btn btn-success btn-xs active logs-selector-yes"><input type="radio" name="f-<?php echo $fid ?>" id="add-logs-f-<?php echo $fid ?>-true" value="1" checked="checked"><?php _e('Yes'); ?></label><label class="btn btn-default btn-xs logs-selector-no"><input type="radio" name="f-<?php echo $fid ?>" id="add-logs-f-<?php echo $fid ?>-false" value="0"><?php _e('No'); ?></label></div><span class="glyphicon glyphicon-question-sign text-muted" data-toggle="tooltip" data-placement="right" data-html="true" title="<div class='hyphen'><?php echo h( $paths ); ?></div>"></span></div></div><?php } ?></div></div><div class="modal-footer"><button type="button" class="btn btn-default" onclick="users_view(this)" id="umUsersViewBtn"><?php _e('« Back');?></button> <button type="button" class="btn btn-default" onclick="users_list()" id="umUsersAddBtn"><?php _e('Cancel');?></button><input type="submit" class="btn btn-primary" data-loading-text="<?php _h('Saving...');?>" value="<?php _h('Save');?>" id="umUsersAddSave"></div><input type="hidden" name="add-type" id="add-type" value="add"></form></div></div><div class="tab-pane" id="umAnonymous"><form id="umAnonymousForm" autocomplete="off" role="form"><div class="modal-body form-horizontal"><div id="umAnonymousAlert"></div><div id="umAnonymousBody" class="logs-selector"></div></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal"><?php _e('Close');?></button><input type="submit" class="btn btn-primary" data-loading-text="<?php _h('Saving...');?>" value="<?php _h('Save');?>" id="umAnonymousSave"></div></form></div><div class="tab-pane" id="umAuthLog"><div class="modal-body" id="umAuthLogBody"></div><div class="modal-footer"><button type="button" class="btn btn-default" data-dismiss="modal"><?php _e('Close');?></button></div></div></div></div></div></div><?php } ?><?php } ?><script>
+// Auto-detect timezone on first run
+(function() {
+	if (typeof(Storage) !== "undefined") {
+		var tzDetected = localStorage.getItem('pml_tz_detected');
+		var currentTz = '<?php echo addslashes($tz); ?>';
+		var urlTz = new URLSearchParams(window.location.search).get('tz');
+		
+		// Only auto-detect if timezone is not set or is default (UTC/Europe/Paris) and not in URL
+		if (!tzDetected && !urlTz && (currentTz === '' || currentTz === 'UTC' || currentTz === 'Europe/Paris')) {
+			try {
+				// Get browser timezone
+				var browserTz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+				
+				if (browserTz && browserTz !== 'UTC' && browserTz !== 'Europe/Paris') {
+					// Check if timezone is in the list of valid timezones
+					var tzSelect = document.getElementById('cog-tz');
+					if (tzSelect) {
+						var tzOptions = Array.from(tzSelect.options).map(function(opt) { return opt.value; });
+						if (tzOptions.indexOf(browserTz) !== -1) {
+							// Set timezone via URL parameter
+							var url = new URL(window.location);
+							url.searchParams.set('tz', browserTz);
+							window.location.href = url.toString();
+							return;
+						}
+					}
+				}
+			} catch(e) {
+				// Fallback: ignore errors
+			}
+		}
+		
+		// Mark as detected to prevent repeated checks
+		if (!tzDetected) {
+			localStorage.setItem('pml_tz_detected', '1');
+		}
+	}
+})();
+</script><script src="js/pml.min.js"></script><script src="js/main.min.js"></script><script>numeral.language('<?php echo $localejs;?>');</script><?php if ( ( 'UA-XXXXX-X' != GOOGLE_ANALYTICS ) && ( '' != GOOGLE_ANALYTICS ) ) { ?><script>var _gaq=[['_setAccount','<?php echo GOOGLE_ANALYTICS;?>'],['_trackPageview']];
 			(function(d,t){var g=d.createElement(t),s=d.getElementsByTagName(t)[0];
 				g.src='//www.google-analytics.com/ga.js';
 				s.parentNode.insertBefore(g,s)}(document,'script'));</script><?php } ?></body></html>
