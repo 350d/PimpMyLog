@@ -129,7 +129,7 @@ if ( ! isset( $files[$file_id] ) ) {
 
 $file_path = @$files[$file_id]['path'];
 if ( ! file_exists( $file_path ) ) {
-    $return['error'] = sprintf( __( 'File <code>%s</code> for file ID <code>%s</code> does not exist, please review your configuration file.' ) , $file_path , $file_id );
+    $return['error'] = sprintf( __( 'File <code>%s</code> for file ID <code>%s</code> does not exist, please review your configuration file. You can remove this entry from your configuration if you don\'t need it.' ) , $file_path , $file_id );
     echo json_encode( $return );
     die();
 }
