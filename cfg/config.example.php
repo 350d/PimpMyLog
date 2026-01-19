@@ -135,6 +135,39 @@
 					"CMD": ["\/OPTIONS\/"]
 				}
 			}
+		},
+		"mysqlslow": {
+			"display"   : "MySQL Slow Log",
+			"path"      : "\/var\/log\/mysql\/mysql-slow.log",
+			"refresh"   : 60,
+			"max"       : 200,
+			"notify"    : true,
+			"format"    : {
+				"block_start"  : "# Time:",
+				"regex"        : "/# Time: ([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2}):([0-9]{2})\\.[0-9]+Z.*?# Query_time: ([0-9.]+)\\s+Lock_time: ([0-9.]+).*?Rows_examined: ([0-9]+)\\n([\\s\\S]*?)(?=# Time:|\\z)/s",
+				"export_title" : "Log",
+				"match"        : {
+					"Date": {
+						"Y": 1,
+						"m": 2,
+						"d": 3,
+						"H": 4,
+						"i": 5,
+						"s": 6
+					},
+					"Time": 7,
+					"Lock": 8,
+					"Rows": 9,
+					"SQL": 10
+				},
+				"types": {
+					"Date": "date:H:i:s",
+					"Time": "numeral:0.000",
+					"Lock": "numeral:0.000",
+					"Rows": "numeral",
+					"SQL": "pre"
+				}
+			}
 		}
 	}
 }
