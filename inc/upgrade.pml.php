@@ -85,7 +85,8 @@ $upgrade = array(
 if ( file_exists( '../version.js' ) ) {
 	$JSl_version        = json_decode( clean_json_version( @file_get_contents( '../version.js' ) ) , true );
 	$upgrade['current'] = $JSl_version[ 'version' ];
-	$default            = $upgrade['current']; // Just version number, no "Current version" prefix
+	// Use formatted version from get_current_pml_version() instead of base version
+	$default            = get_current_pml_version(); // Formatted version (e.g., 1.7.44)
 	$upgrade['footer']  = $default;
 }
 
