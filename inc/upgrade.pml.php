@@ -423,12 +423,12 @@ try {
 		}
 
 		$upgrade['alert'] .= '</div>';
-		$upgrade['footer'] = '<span class="text-warning">' . sprintf ( __( 'Your version %s is out of date' ) , $upgrade['current'] ) . '</span>';
+		$upgrade['footer'] = $default; // Just show version, no "out of date" message
 
 	}
 
 	else {
-		$upgrade['footer'] = sprintf ( __( 'Your version %s is up to date' ) , $upgrade['current'] );
+		$upgrade['footer'] = $default; // Just show version, no "up to date" message
 	}
 
 }
