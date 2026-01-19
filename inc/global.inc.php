@@ -1268,29 +1268,35 @@ function get_current_pml_version()
 		$v = @$j[ 'version' ];
 	}
 
-	// Add commit count to version (e.g., 2.0.0+160)
-	if ( $v !== '' )
+	// Add commit count to base version and format as x.x.xx
+	if ( $v !== '' && is_numeric( $v ) )
 	{
-		$base_dir = dirname( dirname( __FILE__ ) );
-		$git_dir  = $base_dir . DIRECTORY_SEPARATOR . '.git';
+		$base_version = (int)$v;
+		$base_dir     = dirname( dirname( __FILE__ ) );
+		$git_dir      = $base_dir . DIRECTORY_SEPARATOR . '.git';
 		
 		// Check if .git directory exists and git command is available
 		if ( is_dir( $git_dir ) && function_exists( 'exec' ) )
 		{
-			$commit_count = '';
-			$output      = array();
-			$return_var  = 0;
+			$output     = array();
+			$return_var = 0;
 			
 			// Try to get commit count using git
 			@exec( 'cd ' . escapeshellarg( $base_dir ) . ' && git rev-list --count HEAD 2>/dev/null' , $output , $return_var );
 			
 			if ( $return_var === 0 && ! empty( $output[ 0 ] ) && is_numeric( $output[ 0 ] ) )
 			{
-				$commit_count = '+' . (int)$output[ 0 ];
+				$commit_count = (int)$output[ 0 ];
+				$base_version += $commit_count;
 			}
-			
-			$v .= $commit_count;
 		}
+		
+		// Format as x.x.xx (e.g., 1738 -> 1.7.38)
+		$v = sprintf( '%d.%d.%02d' , 
+			(int)($base_version / 1000) ,           // first digit
+			(int)(($base_version / 100) % 10) ,     // second digit
+			$base_version % 100                      // last two digits
+		);
 	}
 
 	return $v;
