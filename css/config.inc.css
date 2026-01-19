@@ -75,6 +75,7 @@ Your stylesheet will be loaded instead of this one if you create a file located 
 	font-size       : 0.8em;
 	-ms-word-break  : break-all;
 	word-break      : break-all;
+	word-break      : break-word;
 	-webkit-hyphens : auto;
 	-moz-hyphens    : auto;
 	hyphens         : auto;
@@ -86,8 +87,10 @@ Your stylesheet will be loaded instead of this one if you create a file located 
 
 /* New log color on the row */
 .newlog td:first-child {
-	background-size : 1px 100%;
-	background      : url(../img/1x1pink_low.gif) no-repeat 0 0;
+	background-position : 0 0;
+	background-image    : url(../img/1x1pink_low.gif);
+	background-size     : 1px 100%;
+	background-repeat   : no-repeat;
 }
 
 /* Marker colors when you click on a date field */
@@ -109,4 +112,10 @@ tr:nth-child(odd):hover td.marker {
 
 tr:nth-child(even):hover td.marker {
 	background-color : #f8f800 !important;
+}
+
+/* Make sure dropdown menu isn't too skinny for longer menu items */
+.navbar-nav>li>.dropdown-menu {
+    width: auto !important;
+    max-width: none !important;
 }
