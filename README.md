@@ -33,7 +33,7 @@ cd PimpMyLog
 
 1. **Copy the configuration file:**
    ```bash
-   cp cfg/config.example.php config.user.json
+   cp cfg/config.example.php config.user.php
    ```
 
 2. **Open the web interface:**
