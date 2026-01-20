@@ -116,12 +116,49 @@ git stash pop
 
 ### MySQL Slow Log
 
+**Setup Instructions:**
+
+1. **Create log directory and set permissions:**
+   ```bash
+   sudo mkdir -p /srv/users/serverpilot/apps/YOURAPP/log
+   sudo chown mysql:mysql /srv/users/serverpilot/apps/YOURAPP/log
+   sudo chmod 755 /srv/users/serverpilot/apps/YOURAPP/log
+   sudo -u mysql touch /srv/users/serverpilot/apps/YOURAPP/log/mysql-slow.log
+   ```
+
+2. **Add path to AppArmor profile (if AppArmor is enabled):**
+   ```bash
+   sudo nano /etc/apparmor.d/usr.sbin.mysqld
+   # Add these lines in the log section:
+   #   /srv/users/serverpilot/apps/YOURAPP/log/ r,
+   #   /srv/users/serverpilot/apps/YOURAPP/log/** rw,
+   sudo apparmor_parser -r /etc/apparmor.d/usr.sbin.mysqld
+   ```
+
+3. **Configure MySQL:**
+   ```bash
+   sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
+   # Add or update:
+   # slow_query_log = 1
+   # slow_query_log_file = /srv/users/serverpilot/apps/YOURAPP/log/mysql-slow.log
+   # long_query_time = 2
+   sudo service mysql restart
+   ```
+
+4. **Enable slow query log:**
+   ```bash
+   mysql -e "SET GLOBAL slow_query_log = 'ON';"
+   mysql -e "SHOW VARIABLES LIKE 'slow_query%';"
+   ```
+
+**Configuration Example:**
+
 ```json
 {
   "files": {
     "mysqlslow": {
       "display": "MySQL Slow Log",
-      "path": "/var/log/mysql/mysql-slow.log",
+      "path": "/srv/users/serverpilot/apps/YOURAPP/log/mysql-slow.log",
       "refresh": 60,
       "max": 200,
       "format": {
